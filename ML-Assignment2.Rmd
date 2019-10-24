@@ -1,0 +1,233 @@
+---
+title: "KNN ASSIGNMENT -2"
+author: "rajendra"
+date: "10/25/2019"
+output: html_document
+---
+
+```{r}
+
+library(readr)
+library(caret)
+set.seed(123)
+universal<-  read_csv("C:/Users/rajendra/Downloads/UniversalBank.csv")
+
+View(universal)
+
+head(universal)
+
+summary(universal)
+
+library(dplyr)
+
+universal$Education <- as.factor(universal$Education)
+universal$`Personal Loan`<-factor(universal$`Personal Loan`,levels=c(0,1),labels = c("Deny","Accept"))
+
+# Creating dummy variables for Education
+
+dummy_model<-dummyVars(~Education,data=universal)
+
+Education_dummy<-predict(dummy_model, universal)
+
+
+universal<-cbind(universal, predict(dummy_model, universal))
+
+View(universal)
+
+ub<-universal
+ub<-ub[,-c(1,5,8)]
+```
+
+
+1q) paritioning data into training  60% and validation 40% set
+
+```{r}
+
+train_index<-createDataPartition(ub$Age,p=0.6,list=FALSE)
+
+train_data<-ub[train_index,]
+
+val_data<-ub[-train_index,]
+
+test_index<-createDataPartition(ub$Age,p=0.2,list=FALSE)
+
+test_data<-ub[test_index,]
+
+traval_data<-ub[-test_index,]
+
+summary(train_data)
+
+summary(val_data)
+
+summary(test_data)
+
+
+```
+
+normalizing the data set
+
+
+```{r}
+
+train.norm.df<-train_data[,-7]
+
+val.norm.df<-val_data[,-7]
+
+test.norm.df<-test_data[,-7]
+
+traval.norm.df<-traval_data[,-7]
+
+norm.values<-preProcess(train.norm.df,method = c("center","scale"))
+
+train.norm.df<-predict(norm.values,train.norm.df)
+
+val.norm.df<-predict(norm.values,val.norm.df)
+
+test.norm.df<-predict(norm.values,test.norm.df)
+
+traval.norm.df<-predict(norm.values,traval.norm.df)
+
+
+```
+
+
+```{r}
+#Applying knn with k value =1
+library(FNN)
+
+nn<- knn(train.norm.df,test=test.norm.df,cl=train_data$`Personal Loan`,k=1,prob = TRUE)
+
+library(gmodels)
+
+CrossTable(x=test_data$`Personal Loan`,y=nn,prop.chisq = FALSE)
+```
+
+considering the customer scenario
+
+
+```{r}
+
+a <- data.frame("Age" = 40, "Experience" = 10, "Income" = 84, "Family" = 2, "CCAvg" = 2, "Education.1"= 0, "Education.2"= 1, "Education.3"= 0 , "Mortgage" = 0, "Securities Account" = 0, "CD Account" = 0, "Online" = 1,"Credit Card" = 1)
+
+
+nn3<- knn(train.norm.df,test= a,cl=train_data$`Personal Loan`,k=1,prob = TRUE)
+
+nn3
+
+#  The customer the loan will be Accepted
+```
+
+2q)choice of k that balances between overfitting and ignoring the predictor information?
+
+```{r}
+
+accuracy.df <- data.frame(k = seq(1, 41, 1), accuracy = rep(0, 41))
+for(i in 1:41) {
+  knn.pred <- knn(train.norm.df, val.norm.df, 
+                  cl = train_data$`Personal Loan`, k = i)
+  accuracy.df[i, 2] <- confusionMatrix(knn.pred, val_data$`Personal Loan`)$overall[1] 
+}
+accuracy.df
+
+accuracy.df[which.max(accuracy.df$accuracy),]
+
+# from the tunning K=4 is the best value after that the model is said to be underfit for the model
+
+
+```
+
+confusion matrix for the validation data that results from using the best k.
+
+```{r}
+
+nn6<- knn(train.norm.df,test=val.norm.df,cl=train_data$`Personal Loan`,k=4,prob = TRUE)
+
+CrossTable(x=val_data$`Personal Loan`, y=nn6, prop.chisq = FALSE)
+# Accuracy = 96.3
+```
+
+4) Consider the customer scenario for the k =4 (best value) 
+```{r}
+d <-  data.frame("Age" = 40, "Experience" = 10, "Income" = 84, "Family" = 2, "CCAvg" = 2, "Education.1"= 0, "Education.2"= 1, "Education.3"= 0 , "Mortgage" = 0, "Securities Account" = 0, "CD Account" = 0, "Online" = 1,"Credit Card" = 1)
+
+nn4<- knn(train.norm.df,test= d,cl=train_data$`Personal Loan`,k=4,prob = TRUE)
+
+nn4
+
+
+```
+
+5) Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%).
+```{r}
+train_index1<-createDataPartition(ub$Age,p=0.5,list=FALSE)
+
+train_data1<-ub[train_index1,]
+
+val_data1<-ub[-train_index1,]
+
+test_index1<-createDataPartition(ub$Age,p=0.3,list=FALSE)
+
+test_data1<-ub[test_index1,]
+
+traval_data1<-ub[-test_index1,]
+
+summary(train_data1)
+
+summary(val_data1)
+
+summary(test_data1)
+
+#normalizing the data set
+train.norm.df1<-train_data1[,-7]
+
+val.norm.df1<-val_data1[,-7]
+
+test.norm.df1<-test_data1[,-7]
+
+traval.norm.df1<-traval_data1[,-7]
+
+norm.values1<-preProcess(train.norm.df1,method = c("center","scale"))
+
+train.norm.df1<-predict(norm.values1,train.norm.df1)
+
+val.norm.df1<-predict(norm.values1,val.norm.df1)
+
+test.norm.df1<-predict(norm.values1,test.norm.df1)
+
+traval.norm.df1<-predict(norm.values1,traval.norm.df1)
+
+#Applying knn with k value =1
+library(FNN)
+
+nn1<- knn(train.norm.df1,test=test.norm.df1,cl=train_data1$`Personal Loan`,k=1,prob = TRUE)
+
+
+
+library(gmodels)
+
+CrossTable(x=test_data1$`Personal Loan`,y=nn1,prop.chisq = FALSE)
+
+
+accuracy.df1 <- data.frame(k = seq(1, 41, 1), accuracy = rep(0, 41))
+for(i in 1:41) {
+  knn.pred1 <- knn(train.norm.df1, val.norm.df1, 
+                  cl = train_data1$`Personal Loan`, k = i)
+  accuracy.df1[i, 2] <- confusionMatrix(knn.pred1, val_data1$`Personal Loan`)$overall[1] 
+}
+accuracy.df1
+
+nn2<-knn(train.norm.df1,test=test.norm.df1,cl=train_data1$`Personal Loan`,k=4,prob = TRUE)
+CrossTable(x=test_data1$`Personal Loan`,y=nn2,prop.chisq = FALSE)
+nn3<-knn(train.norm.df1,test=val.norm.df1,cl=train_data1$`Personal Loan`,k=4,prob = TRUE)
+CrossTable(x=val_data1$`Personal Loan`,y=nn3,prop.chisq = FALSE)
+
+
+
+accuracy.df1[which.max(accuracy.df1$accuracy),]
+
+# Accuracy for test set and validation is 96.2% and 95.8% the difference is due to cross validation
+
+
+```
+
+
