@@ -1,0 +1,132 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+
+```{r}
+library(readr)
+
+library(caret)
+
+library(ISLR)
+
+FlightDelays <- read_csv("C:/Users/rajendra/Downloads/FlightDelays.csv")
+
+View(FlightDelays)
+
+library(e1071)
+
+summary(FlightDelays)
+```
+
+
+```{r}
+# Creating a table with 5 predictive Variables
+Status<-FlightDelays[,c(1,2,4,8,10,13)]
+
+set.seed(123)
+
+# Week and Time columns are recorded as factors
+
+Status$DAY_WEEK<-factor(Status$DAY_WEEK)
+
+
+Status$CRS_DEP_TIME <- factor(round(Status$CRS_DEP_TIME/100))
+
+
+
+#  Creating a outcome   in two classes (1 = delayed and 0 = ontime)
+Status$`Flight Status`<-factor(Status$`Flight Status`,levels = c("delayed","ontime"),labels=c(1,0))
+
+
+```
+
+
+ 1Q)Partition data into training 60%  and validation 40%
+
+```{r}
+
+Index_Train<-createDataPartition(Status$DEST, p=0.6, list=FALSE)
+Train <-Status[Index_Train,]
+val <-Status[-Index_Train,]
+
+summary(Train)
+
+summary(val)
+
+
+
+```
+
+
+
+
+
+
+2Q)Running the Naive Bayes model on the train set
+
+```{r}
+# naive bias classifier
+
+nb_model <-naiveBayes(Train$`Flight Status` ~ .,data = Train)
+nb_model
+
+```
+
+3Q)  counts table and a proportion table outlining how many and what proportion of flights were delayed and on-time at each of the three airports.
+
+
+```{r}
+
+# Count of number of flights delayed and ontime
+table(Train$`Flight Status`,Train$DEST)
+
+# Proportion of flights delayed and ontime
+
+prop.table(table(Train$`Flight Status`,Train$DEST),margin = 1)
+
+
+
+```
+
+
+
+
+4q) Predicting outcome on the train and  validation set 
+ 
+ 
+```{r}
+pred_trai<-predict(nb_model,Train)
+
+confusionMatrix(pred_trai,Train$`Flight Status`)
+
+Predicted_labels2<-predict(nb_model,Train,type = "raw")
+
+library(pROC)
+roc(Train$`Flight Status`,Predicted_labels2[,2])
+plot.roc(Train$`Flight Status`,Predicted_labels2[,2])
+
+```
+
+
+```{r}
+#4q)confusion matrix and ROC for the validation data
+
+predicted_validlabels<-predict(nb_model,val)
+
+confusionMatrix(predicted_validlabels,val$`Flight Status`)
+
+
+
+Predicted_labels2<-predict(nb_model,val,type = "raw")
+
+roc(val$`Flight Status`,Predicted_labels2[,2])
+plot.roc(val$`Flight Status`,Predicted_labels2[,2])
+
+
+```
+
