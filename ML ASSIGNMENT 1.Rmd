@@ -1,0 +1,158 @@
+---
+title: "ASSIGNMENT - 1"
+author: "rajendra"
+date: "10/29/2019"
+output: html_document
+---
+
+1Q)
+
+Data set as been taken from kaggle data repisotory {International football results from 1872 to 2019}
+
+Data set is named as "soccer.data"
+
+2Q)
+
+Importing the dataset into R
+
+```{r}
+library(readr)
+soccer <- read_csv("C:/Users/rajendra/Pictures/results.csv")
+View(soccer)
+```
+
+3Q)
+
+Descriptive  Statistics 
+
+```{r}
+# Finding mean home score of each team
+
+a<-soccer$home_team
+
+b<-soccer$home_score
+
+c<-tapply(b, a, mean)
+
+head(c)
+
+
+# TO find average home_score of team England and Yorkshire 
+
+print(c["England"])
+
+c["Yorkshire"]
+
+#Number of matches played by each team
+
+d<-table(soccer$home_team)
+
+head(d)
+# Finding the highest number of matches played by a home_team
+
+max(d)
+
+
+#median away_score of england team 
+e<-soccer[,c(3,5)]
+
+z<-e$away_score[e$away_team=="England"]
+
+print(median(z))
+
+
+#Range of England team away_score
+
+range(soccer$away_score[soccer$away_team=="England"])
+
+
+# Quantlie for the cities they have played 
+
+quantile(table(soccer$city))
+
+
+
+# Variance of the Wales team withrespect to home score and away score
+
+f<-soccer$away_score[soccer$away_team =="Wales"]
+
+g<-soccer$home_score[soccer$home_team=="Wales"]
+
+length(f)
+
+#Since lenghth of f is too high we are limiting the f which is equal to g
+n<-f[c(1:317)]
+
+length(g)
+
+h<-var(f[c(1:317)],g)
+
+h
+
+# Standard deviation of the wales team withrespect to and away score
+
+sd(f)
+
+# Summary of the data set
+
+summary(soccer)
+
+
+
+```
+
+4q)
+
+Transformation of home score and away score 
+
+```{r}
+k<-(soccer$home_score)^2
+
+head(k)
+
+cube<-(soccer$away_score)^3
+
+head(cube)
+```
+
+5q)
+Barplot for Number of matches played during the year 1872-1892.
+
+```{r}
+
+i<-soccer$date[c(1:100)]
+
+mdate<-as.Date(i,"%Y-%m-%d")
+
+class(mdate)
+
+format(mdate,"%Y")
+
+j<-barplot(table(format(mdate,"%Y")),main = "Number of matches played during year 1872-1892",xlab = "Years",ylab = "No.of Matches played",col = "Green")
+
+
+
+text(j,table(format(mdate,"%Y")),labels =as.character(table(format(mdate,"%Y"))),adj = c(0.5,-0.5))
+
+
+
+```
+
+Scatter plot between away team and away score
+```{r}
+
+table(soccer$home_team[soccer$home_team =="Wales"])
+
+plot(g, n, main = "Scatter plot between home score and away score of wales",xlab = "home score",ylab = "away score")
+
+```
+
+
+
+
+
+
+
+
+
+
