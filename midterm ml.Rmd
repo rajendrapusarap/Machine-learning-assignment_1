@@ -1,0 +1,188 @@
+---
+title: "K-MEANS"
+author: "rajendra"
+date: "10/31/2019"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r}
+library(readr)
+library(caret)
+library(ISLR)
+library(tidyverse)
+library(factoextra)
+set.seed(15)
+```
+
+
+Qa :- Eliminating null values from the dataset
+```{r}
+# Importing dataset in r
+Universities <- read_csv("C:/Users/rajendra/Downloads/Universities.csv")
+uni<-na.omit(Universities)
+summary(uni)
+
+```
+
+
+Qb :- Obtaining the opitmal value of k and number of clusters
+
+```{r}
+# Removing Categorical values from the dataset
+
+a<-uni[,c(-1,-2,-3)]
+
+#Scaling  the data frame (z-score)
+
+b<-scale(a)
+
+summary(b)
+
+
+#Finding the best k value using Elbow Chart
+
+fviz_nbclust(b,kmeans,method = "wss")
+
+#Using silhouette method to determine k
+
+fviz_nbclust(b,kmeans,method = "silhouette")
+
+#Kmeans cluster algorithm
+k4 <- kmeans(b, centers = 3, nstart = 1)
+
+k4$centers # Centroids
+
+k4$size    # Size of each cluster
+
+# Visualizing the clusters
+
+fviz_cluster(k4,data=b)
+
+
+```
+
+From the graph,we can say that k=3 is the best value and the dataset is divided into three different  clusters
+
+Qc :- Combining cluster information with dataset to determine the statistics of each cluster
+```{r}
+com<-cbind(uni,k4$cluster) 
+
+# Assigning labels to three clusters (Tier 1, Tier 2, Tier3 Universities)
+
+com$`k4$cluster`<-factor(com$`k4$cluster`,levels = c(1,2,3),labels = c("T3","T1","T2")) 
+
+c1<-com[com$`k4$cluster`=="T1",]#Cluster 2
+
+c2<-com[com$`k4$cluster`=="T2",]#Cluster 3
+
+c3<-com[com$`k4$cluster`=="T3",]#Cluster 1
+
+
+```
+
+Classifying the clusters based on their mean values of respective columns
+
+Cluster 1 Statistics
+```{r}
+summary(c1)
+
+#Tier 3 universties (Cluster 1)
+
+#Low applications recieved
+#Low applications accepted
+#Minimum number of students enrolled
+# Minimum number of new students from top 25%
+# Minimum number of new students from top 10%
+# Less number of full time under graduate
+# Out of station tution fee are less expensive
+# Very few number of rooms
+#Low cost of books
+# Number of boards are low
+# Graduation rate is low
+# less percent of faculty ratio wrt phd
+
+
+
+```
+Cluster 2 statistics
+```{r}
+summary(c2)
+# Tier 1 Universties (Cluster 2)
+# Higher Graduation rate             
+# High percentage faculty ratio w.r.t PHD   
+# High in-state tutuion fee
+# More number of rooms             
+# Number of boards are high        
+# More number of new students from top 25%
+# More number of new students from top 10%
+
+```
+cluster 3 statistics
+```{r}
+summary(c3)
+#Tier 2 universties (Cluster 3)
+#Maximum number of applications recieved    
+#Maximum number of applications accepted    
+#Maximum number of new students enrolled
+#More number of part time graduates
+#More number of full time graduates
+#Huge amount of estimated book cost
+#Huge amount of personal expenses
+#Higher Student to faculty ratio
+
+```
+
+Qd :- Finding the relationship between the clusters and the categorical information?
+
+```{r}
+head(com)
+head(com[com$`k4$cluster`=="T1",c(1,2,3,21)]) 
+head(com[com$`k4$cluster`=="T2",c(1,2,3,21)]) 
+head(com[com$`k4$cluster`=="T3",c(1,2,3,21)])  
+```
+
+
+cluster 1:-It has both public and private universities
+cluster 2:- maximum number of the universities are private
+cluster 3::-maximum number of the universities are pubic
+
+Qe :-
+```{r}
+k4
+# 1st cluster has 150 colleges and has a variability of 1424.8 
+
+# 2nd cluster has 46 colleges  and has a variability of 1044.68 (the members are closer to each other in terms of distance hen compared to other clusters)
+
+# 3rd cluster has 275 colleges  and has a variability of 2562.3
+k4$withinss
+# It describes the distance between centroids and mean of all the points within a cluster
+
+k4$betweenss
+```
+
+Qf :-
+```{r}
+
+
+Universities$`# PT undergrad`[is.na(Universities$`# PT undergrad`)]=mean(Universities$`# PT undergrad`,na.rm=TRUE)            # Replacining the na values with mean of that column
+test<-filter(Universities,`College Name` == "Tufts University") # filtering the Tufts university 
+summary(Universities$`# PT undergrad`)
+
+a1<-rbind(uni,test)
+
+
+b1<-scale(a1[,-c(1,2,3)]) #Scaling  the data frame (z-score)
+
+
+k5 <- kmeans(b1, centers = 3, nstart = 10) # kmeans algorithim
+
+which(grepl("Tufts University",a1$`College Name`)) # to find the position of tufts university
+k5$cluster[472] # To find the cluster
+
+
+```
+
+Tufts University belongs to cluster 2 from the above information and it belongs to Tier 1 University
