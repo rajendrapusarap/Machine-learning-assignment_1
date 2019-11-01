@@ -3,9 +3,9 @@ title: "K-MEANS"
 author: "rajendra"
 date: "10/31/2019"
 output:
-  html_document: default
-  pdf_document: default
   word_document: default
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r}
@@ -81,13 +81,28 @@ c2<-com[com$`k4$cluster`=="T2",]#Cluster 3
 c3<-com[com$`k4$cluster`=="T3",]#Cluster 1
 
 
+
+plot(c(0), xaxt = 'n', ylab = "", type = "l",
+     ylim = c(min(k4$centers), max(k4$centers)), xlim = c(0, 18))
+
+axis(1, at = c(1:17), labels = FALSE)
+text(seq(1,17,by=1),par("usr")[3]-0.2,labels = colnames(b),srt = 45,pos =1,xpd = TRUE) # X Measurement names
+
+# plot centroids
+for (i in c(1:3))
+  lines(k4$centers[i,], lty = i, lwd = 2) 
+
+# name clusters
+text(x = 0.5, y = k4$centers[, 1], labels = paste("Cluster", c(1:3))) # Cluster Names
+
+
 ```
 
 Classifying the clusters based on their mean values of respective columns
 
 Cluster 1 Statistics
 ```{r}
-summary(c1)
+#From the graph shown above we can infer the characterstics of cluster 1 and named it as Tier 3 Universities
 
 #Tier 3 universties (Cluster 1)
 
@@ -109,7 +124,8 @@ summary(c1)
 ```
 Cluster 2 statistics
 ```{r}
-summary(c2)
+#From the graph shown above we can infer the characterstics of cluster 2 and named it as Tier 1 Universities
+
 # Tier 1 Universties (Cluster 2)
 # Higher Graduation rate             
 # High percentage faculty ratio w.r.t PHD   
@@ -122,7 +138,8 @@ summary(c2)
 ```
 cluster 3 statistics
 ```{r}
-summary(c3)
+#From the graph shown above we can infer the characterstics of cluster 3 and named it as Tier 2 Universities
+
 #Tier 2 universties (Cluster 3)
 #Maximum number of applications recieved    
 #Maximum number of applications accepted    
@@ -141,7 +158,10 @@ Qd :- Finding the relationship between the clusters and the categorical informat
 head(com)
 head(com[com$`k4$cluster`=="T1",c(1,2,3,21)]) 
 head(com[com$`k4$cluster`=="T2",c(1,2,3,21)]) 
-head(com[com$`k4$cluster`=="T3",c(1,2,3,21)])  
+head(com[com$`k4$cluster`=="T3",c(1,2,3,21)])
+library(ggplot2)
+ggplot(com,aes(x=com$State,y=com$`Public (1)/ Private (2)`,color=com$`k4$cluster`))+geom_point()
+
 ```
 
 
@@ -161,27 +181,30 @@ k4$withinss
 # It describes the distance between centroids and mean of all the points within a cluster
 
 k4$betweenss
+# Itdescribes the distance between centriods of all the customers
 ```
 
 Qf :-
 ```{r}
 
 
-Universities$`# PT undergrad`[is.na(Universities$`# PT undergrad`)]=mean(Universities$`# PT undergrad`,na.rm=TRUE)            # Replacining the na values with mean of that column
-test<-filter(Universities,`College Name` == "Tufts University") # filtering the Tufts university 
-summary(Universities$`# PT undergrad`)
-
-a1<-rbind(uni,test)
-
-
-b1<-scale(a1[,-c(1,2,3)]) #Scaling  the data frame (z-score)
-
-
-k5 <- kmeans(b1, centers = 3, nstart = 10) # kmeans algorithim
-
-which(grepl("Tufts University",a1$`College Name`)) # to find the position of tufts university
-k5$cluster[472] # To find the cluster
-
+Km<-kmeans(a,centers = 3)
+b1<-mean(Km$centers[1,]) # Mean of Cluster 1
+b2<-mean(Km$centers[2,]) # Mean of cluster 2
+b3<-mean(Km$centers[3,]) # Mean of cluster 3
+a1<-Universities[Universities$`College Name`=="Tufts University",]
+View(a1)
+a2<-apply(a1[,-c(1:3,10)],1,mean) # Mean of record
+dist(rbind(a2,b1)) # Euclideam distance betweewn  cluster 1 mean and Tufts university data
+dist(rbind(a2,b2))
+dist(rbind(a2,b3))
+a1$`# PT undergrad`<-1596.33 # From the above, Mean value which is near to cluster 2. Hence replacing the missing value with mean value
+uni2<-rbind(uni,a1)
+View(uni2)
+uni2_z<-scale(uni2[,-c(1:3)])
+uni2_cluster<-kmeans(uni2_z,3)
+uni2<-cbind(uni2,uni2_cluster$cluster)
+uni2[472,] # From the model, this uniersity falls under Cluster 2
 
 ```
 
