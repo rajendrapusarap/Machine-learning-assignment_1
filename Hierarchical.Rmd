@@ -1,0 +1,174 @@
+---
+title: "Hierarchical clustering"
+author: "rajendra"
+date: "12/11/2019"
+output:
+  html_document: default
+  word_document: default
+---
+```{r}
+library(ISLR)
+library(readr)
+library(tidyverse)  
+library(cluster)    
+library(factoextra) 
+library(dendextend) 
+library(fpc)
+```
+
+```{r}
+
+cereals <- read_csv("Cereals.csv")
+View(cereals)
+set.seed(123)
+summary(cereals)
+```
+
+```{r}
+cereals.norm <- cereals[,-c(1:3)]#normaliizing the dataset
+cereals.norm <- na.omit(cereals.norm)#Ommiitting na values
+cereals.norm <- scale(cereals.norm)
+str(cereals.norm)
+```
+
+
+```{r}
+# Dissimilarity matrix
+d <- dist(cereals.norm, method = "euclidean")
+
+# Hierarchical clustering using Complete Linkage
+hc1 <- hclust(d, method = "complete" )
+
+# Plot the obtained dendrogram
+plot(hc1, cex = 0.6, hang = -1)
+```
+
+```{r}
+# Dissimilarity matrix
+d <- dist(cereals.norm, method = "euclidean")
+
+# Compute with agnes and with different linkage methods
+hc_single <- agnes(cereals.norm, method = "single")
+hc_complete <- agnes(cereals.norm, method = "complete")
+hc_average <- agnes(cereals.norm, method = "average")
+hc_ward <- agnes(cereals.norm, method = "ward")
+
+# Compare Agglomerative coefficients
+print(hc_single$ac)
+
+print(hc_complete$ac)
+
+print(hc_average$ac)
+
+print(hc_ward$ac)
+```
+
+```{r}
+hc2 <- agnes(cereals.norm, method = "ward")
+pltree(hc2, cex = 0.6, hang = -1, main = "Dendrogram of agnes")
+```
+
+```{r}
+d <- dist(cereals.norm, method = "euclidean")
+
+# Hierarchical clustering using Ward Linkage
+hc3 <- hclust(d, method = "ward.D2" )
+
+# Plot the obtained dendrogram
+plot(hc3, cex = 0.6, hang = -1)
+
+#From the dendogram,when we cut the longest length we are obtaining the optimal number of clusters as 6
+
+hcluster <- cutree(hc3, k = 4)
+plot(hc3, cex = 0.6)
+rect.hclust(hc3, k = 4, border = 2:5)
+fviz_cluster(list(data = cereals.norm, cluster = hcluster))
+
+
+#cluster stabilities of all 4 clusters
+hclust_stability <- clusterboot(cereals.norm, clustermethod=hclustCBI, method="ward.D2", k=4, count = FALSE)
+hclust_stability
+
+#Analyze the clustering results
+clusters <- hclust_stability$result$partition 
+
+#Cluster stability values
+hclust_stability$bootmean 
+
+```
+
+```{r}
+library(caret)
+set.seed(123)
+C<-cereals
+C1<-na.omit(C) 
+
+C_index<-createDataPartition(C1$calories,p=0.5,list=FALSE)
+train_data<-C1[C_index,]
+test_data<-C1[-C_index,]
+train_data<-scale(train_data[,-c(1:3)])
+test_data<-scale(test_data[,-c(1:3)])
+
+# Compute with agnes and with different linkage methods
+hc_single <- agnes(train_data, method = "single")
+hc_complete <- agnes(train_data, method = "complete")
+hc_average <- agnes(train_data, method = "average")
+hc_ward <- agnes(train_data, method = "ward")
+
+# Compare Agglomerative coefficients
+print(hc_single$ac)
+
+print(hc_complete$ac)
+
+print(hc_average$ac)
+
+print(hc_ward$ac)
+
+
+
+# Compute with agnes and with different linkage methods
+hc_single1 <- agnes(test_data, method = "single")
+hc_complete1 <- agnes(test_data, method = "complete")
+hc_average1 <- agnes(test_data, method = "average")
+hc_ward1 <- agnes(test_data, method = "ward")
+
+# Compare Agglomerative coefficients
+print(hc_single1$ac)
+
+print(hc_complete1$ac)
+
+print(hc_average1$ac)
+
+print(hc_ward1$ac)
+
+
+
+pltree(hc_ward,cex=0.6,hang=-1,main="Dendrogram of agnes")
+rect.hclust(hc_ward, k = 3, border = 2:5)
+
+pltree(hc_ward1,cex=0.6,hang=-1,main="Dendrogram of agnes")
+rect.hclust(hc_ward1, k = 3, border = 2:5)
+
+tanglegram(as.dendrogram(hc_ward),as.dendrogram(hc_ward1))
+
+cor_cophenetic(as.dendrogram(hc_ward),as.dendrogram(hc_ward1))
+cor_bakers_gamma(as.dendrogram(hc_ward),as.dendrogram(hc_ward1))
+
+#Since the stability values are near to zero the above model is not stable
+```
+
+
+
+```{r}
+result<-cbind(C1,hcluster)
+result[result$hcluster==1,]
+
+result[result$hcluster==2,]
+
+result[result$hcluster==3,]
+
+result[result$hcluster==4,]
+
+#From the above results we can say that elementary public schools belongs to cluster 1 because it has highest rating.We need to normalize the data set because the data set is having diffferent range values.
+```
+
