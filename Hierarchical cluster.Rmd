@@ -1,0 +1,200 @@
+---
+title: "Hierarchical clustering"
+author: "rajendra"
+date: "12/11/2019"
+output:
+  word_document: default
+  html_document: default
+---
+```{r}
+library(readr)
+library(ISLR)
+library(tidyverse)  
+library(cluster)    
+library(factoextra) 
+library(dendextend) 
+library(fpc)
+set.seed(123)
+
+
+cereals <- read_csv("C:/Users/rajendra/Music/cereals.csv")
+summary(cereals)
+```
+
+
+
+```{r}
+cereals.norm <- cereals[,-c(1:3)]#normaliizing the dataset
+cereals.norm <- na.omit(cereals.norm)#Ommiitting na values
+cereals.norm <- scale(cereals.norm)
+str(cereals.norm)
+```
+
+
+```{r}
+# Dissimilarity matrix
+d <- dist(cereals.norm, method = "euclidean")
+
+# Hierarchical clustering using Complete Linkage
+hc1 <- hclust(d, method = "complete" )
+
+# Plot the obtained dendrogram
+plot(hc1, cex = 0.6, hang = -1)
+```
+
+```{r}
+# Dissimilarity matrix
+d <- dist(cereals.norm, method = "euclidean")
+
+# Compute with agnes and with different linkage methods
+hc_single <- agnes(cereals.norm, method = "single")
+hc_complete <- agnes(cereals.norm, method = "complete")
+hc_average <- agnes(cereals.norm, method = "average")
+hc_ward <- agnes(cereals.norm, method = "ward")
+
+# Compare Agglomerative coefficients
+print(hc_single$ac)
+
+print(hc_complete$ac)
+
+print(hc_average$ac)
+
+print(hc_ward$ac)
+```
+
+```{r}
+hc2 <- agnes(cereals.norm, method = "ward")
+pltree(hc2, cex = 0.6, hang = -1, main = "Dendrogram of agnes")
+```
+
+```{r}
+d <- dist(cereals.norm, method = "euclidean")
+
+# Hierarchical clustering using Ward Linkage
+hc3 <- hclust(d, method = "ward.D2" )
+
+# Plot the obtained dendrogram
+plot(hc3, cex = 0.6, hang = -1)
+
+#From the dendogram,when we cut the longest length we are obtaining the optimal number of clusters as 4
+
+hcluster <- cutree(hc3, k = 4)
+plot(hc3, cex = 0.6)
+rect.hclust(hc3, k = 4, border = 2:5)
+fviz_cluster(list(data = cereals.norm, cluster = hcluster))
+
+
+#cluster stabilities of all 4 clusters
+hclust_stability <- clusterboot(cereals.norm, clustermethod=hclustCBI, method="ward.D2", k=4, count = FALSE)
+hclust_stability
+
+#Analyze the clustering results
+clusters <- hclust_stability$result$partition 
+
+#Cluster stability values
+hclust_stability$bootmean 
+
+```
+
+```{r}
+library(caret)
+set.seed(123)
+C<-cereals
+#Ommiting NA values
+C1<-na.omit(C) 
+
+#Data Parition
+train_data<-C1[1:50,]
+test_data<-C1[51:74,]
+
+#Normalizing the data set
+train_data1<-as.data.frame(scale(train_data[,-c(1:3)]))
+test_data1<-as.data.frame(scale(test_data[,-c(1:3)]))
+
+# Compute with agnes and with different linkage methods
+hc_single <- agnes(train_data1, method = "single")
+hc_complete <- agnes(train_data1, method = "complete")
+hc_average <- agnes(train_data1, method = "average")
+hc_ward <- agnes(train_data1, method = "ward")
+
+# Compare Agglomerative coefficients
+print(hc_single$ac)
+
+print(hc_complete$ac)
+
+print(hc_average$ac)
+
+print(hc_ward$ac)
+
+
+pltree(hc_ward,cex=0.6,hang=-1,main="Dendrogram of agnes")
+
+#From the dendogram,when we cut the longest length we are obtaining the optimal number of clusters as 4
+
+rect.hclust(hc_ward, k =4, border = 2:5)
+
+points_hc <- cutree(hc_ward, k = 4)
+
+# Centres for the clusters
+result<-as.data.frame(cbind(train_data1,points_hc))
+m1<-data.frame(column=seq(1,13,1),mean=rep(0,13))
+m2<-data.frame(column=seq(1,13,1),mean=rep(0,13))
+m3<-data.frame(column=seq(1,13,1),mean=rep(0,13))
+m4<-data.frame(column=seq(1,13,1),mean=rep(0,13))
+for(i in 1:13)
+{
+  m1[i,2]<-mean(result[result$points_hc==1,i])
+  m2[i,2]<-mean(result[result$points_hc==2,i])
+  m3[i,2]<-mean(result[result$points_hc==3,i])
+  m4[i,2]<-mean(result[result$points_hc==4,i])
+  
+}
+centroid<-t(cbind(m1$mean,m2$mean,m3$mean,m4$mean)) #Means of the columns
+colnames(centroid)<-colnames(cereals[,-c(1:3)])
+centroid
+
+#Finddd the nearest cluster for test data using Euclidean distance
+r1<- data.frame(Test_Data=seq(1,nrow(test_data)),cluster_lables=rep(0,nrow(test_data)))
+
+for(i in seq(1:nrow(test_data)))
+{
+  y1<-as.data.frame(rbind(centroid,test_data1[i,]))
+  y2<-as.matrix(get_dist(y1))
+  r1[i,2]<-which.min(y2[5,-5])
+  
+}
+r1
+
+
+
+qw1<-as.data.frame(cbind(cereals.norm,hcluster))
+
+#Comparing the test data clusters with original data clusters
+cbind(Original_data_labels=qw1[51:74,14],Test_data_labels=r1$cluster_lables)
+
+#Calculating the stability of the clusters
+table(cbind(qw1[51:74,14]==r1$cluster_lables))
+
+#From the above result accuracy = 21/24 = 88% (stability)
+
+
+
+```
+
+
+
+```{r}
+result<-cbind(C1,hcluster)
+result[result$hcluster==1,]
+
+result[result$hcluster==2,]
+
+result[result$hcluster==3,]
+
+result[result$hcluster==4,]
+
+#From the above results we can say that elementary public schools belongs to cluster 1 because it has highest protiens ,fiber and ratings.
+#We need to normalize the data set because the data set is having diffferent range values.
+```
+
+
