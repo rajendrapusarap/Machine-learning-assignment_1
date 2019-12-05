@@ -1,0 +1,242 @@
+---
+title: "bathsoap"
+author: "rajendra"
+date: "12/5/2019"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+library(caret)
+library(factoextra)
+library(hrbrthemes)
+library(GGally)
+library(viridis)
+set.seed(123)
+
+#Read Data
+library(readr)
+
+BathSoap <- read_csv("C:/Users/rajendra/Downloads/BathSoap.csv")
+str(BathSoap)
+
+#Customer Brand loyality
+#Brand loyality is defined as the  customer buys spends a maximum amount of money in 8 brands.
+
+r1<-BathSoap[,23:30]# Inclding 8 brands
+BathSoap$Loyality_Brand<-as.numeric(apply(r1,1,max)) # Maximum value of the brand
+table(BathSoap$Loyality_Brand)
+```
+
+a. The variables that describe purchase behavior (including brand loyalty)
+```{r}
+#The variables used by us are No.Of Brands,Brand runs, Total Volume,Number of Transctions,value,trans/brandruns,vol/trans,avg price,others999,Loyality_Brand.
+
+BS<-BathSoap[,c(12,13,14,15,16,17,18,19,31,47)]
+
+data1.s<-as.data.frame(scale(BS)) # scaling the data
+# Elbow chart to estimate the optimal K
+fviz_nbclust(data1.s,kmeans,method = "silhouette")
+
+# Choosing the optimal K as 3 and forming 3 clusters
+model<-kmeans(data1.s,3,nstart=50)
+
+# Visualizing the clusters
+fviz_cluster(model,data1.s)
+
+
+result<-as.data.frame(cbind(1:nrow(model$centers),model$centers))
+result$V1<-as.factor(result$V1)
+# Characteristics of the cluster
+result
+
+model$size
+
+
+# Parallel plot to visualize the cluster.
+ggparcoord(result,
+           columns = 2:ncol(result), groupColumn = 1, 
+           showPoints = TRUE, 
+           title = "Characterisitcs of the cluster",
+           alphaLines = 0.3 
+) 
+
+
+```
+Characterstics of cluster based on purchase behaviour
+
+Loyality brand for cluster1 is very high and cluster 2 is very low because the number of brand runs is very low and high respctively.
+
+Average price is low for cluster 1 and high for cluster 2 and moreover the people are purchasing very low volume of brands from others 999 in cluster 1  when compared to cluster 2
+
+High volume of transctions is very high in clster1 when compared to cluster 2.
+
+Cluster 3 is unremarkable from any measure
+ 
+
+b. The variables that describe the basis for purchase
+
+```{r}
+#Finding the maximum proptional category from the 10 categories
+r2<-BathSoap[,36:46]
+BathSoap$max_prop_no<-as.numeric(apply(r2,1,which.max))
+BathSoap$max_prop<-as.numeric(apply(r2,1,max))
+
+# variables considered for basis of purchase are purchase volume no promo,6%,other promo,pric categories from 1 to 4 and bath soap maximumprop
+BS1<-BathSoap[,c(20:22,32:35,49)]
+
+data2.s<-as.data.frame(scale(BS1)) # scaling the data
+# Elbow chart to estimate the optimal K
+fviz_nbclust(data2.s,kmeans,method = "silhouette")
+
+# Choosing the optimal K as 3 and forming 3 clusters
+model1<-kmeans(data2.s,3,nstart=50)
+
+# Visualizing the clusters
+fviz_cluster(model1,data2.s)
+
+
+result1<-as.data.frame(cbind(1:nrow(model1$centers),model1$centers))
+result1$V1<-as.factor(result1$V1)
+# Characteristics of the cluster
+result1
+
+model1$size
+
+
+# Parallel plot to visualize the cluster.
+ggparcoord(result1,
+           columns = 2:ncol(result1), groupColumn = 1, 
+           showPoints = TRUE, 
+           title = "Characterisitcs of the cluster",
+           alphaLines = 0.3 
+) 
+```
+Characterstics of cluster
+
+In cluster 1 we can see that maximum proption of purchase is coming when  there is no promos and exactly  reversible for cluster 2
+
+There is low for value for price category 1,category2,category 4 and high value of price category 3 then high chance of maximum proption of purchase in cluster1 
+
+
+c:
+
+```{r}
+
+BS2<-BathSoap[,c(12:22,31:35,47,49)]
+
+data3.s<-as.data.frame(scale(BS2)) # scaling the data
+# Elbow chart to estimate the optimal K
+fviz_nbclust(data3.s,kmeans,method = "silhouette")
+
+# Choosing the optimal K as 3 and forming 3 clusters
+model2<-kmeans(data3.s,3,nstart=50)
+
+# Visualizing the clusters
+fviz_cluster(model2,data3.s)
+
+
+result2<-as.data.frame(cbind(1:nrow(model2$centers),model2$centers))
+result2$V1<-as.factor(result2$V1)
+# Characteristics of the cluster
+result2
+
+model2$size
+
+
+# Parallel plot to visualize the cluster.
+ggparcoord(result2,
+           columns = 2:10, groupColumn = 1, 
+           showPoints = TRUE, 
+           title = "Characterisitcs of the cluster",
+           alphaLines = 0.3 
+) 
+ggparcoord(result2,
+           columns = 11:19, groupColumn = 1, 
+           showPoints = TRUE, 
+           title = "Characterisitcs of the cluster",
+           alphaLines = 0.3 
+) 
+```
+
+
+
+2)
+```{r}
+BS1<-BathSoap[,c(2:11,20:22,31:35,47,49)]
+
+data2.s<-as.data.frame(scale(BS1)) # scaling the data
+# Elbow chart to estimate the optimal K
+fviz_nbclust(data2.s,kmeans,method = "silhouette")
+
+# Choosing the optimal K as 3 and forming 3 clusters
+model1<-kmeans(data2.s,3,nstart=50)
+
+# Visualizing the clusters
+fviz_cluster(model1,data2.s)
+
+
+result1<-as.data.frame(cbind(1:nrow(model1$centers),model1$centers))
+result1$V1<-as.factor(result1$V1)
+# Characteristics of the cluster
+result1
+
+model1$size
+
+
+# Parallel plot to visualize the cluster.
+ggparcoord(result1,
+           columns = 2:21, groupColumn = 1, 
+           showPoints = TRUE, 
+           title = "Characterisitcs of the cluster",
+           alphaLines = 0.3 
+) 
+
+ggparcoord(result1,
+           columns = c(2,10:14,19:21), groupColumn = 1, 
+           showPoints = TRUE, 
+           title = "Characterisitcs of the cluster",
+           alphaLines = 0.3 
+)
+```
+
+
+When we compare all the three models it is observed that variables with reasons of purchase  can explain all the characterstics of data when it is compared with purchase bhaviour and combination of both. so the best segementation of the model is reasons of purchase.
+
+3)
+```{r}
+r1<-BathSoap[,23:31]
+BathSoap$Loyality<-as.numeric(apply(r1,1,which.max))
+BS3 <- BathSoap[,c(2:4,6:11,19,20:22,31:35,47,48,50)]
+BS3$clusters <- model1$cluster
+ggplot(BS3) +
+  aes(x = clusters,fill=as.factor(HS)) +
+  geom_bar() +
+  scale_fill_hue() +
+  theme_minimal() +
+  facet_wrap(vars(c("Pr Cat 1","Pr Cat 2","Pr Cat 3","Pr Cat 4")))
+
+
+ggplot(BS3) +
+  aes(x = clusters,fill= as.factor(apply(BS3[,c(15:18)],1,which.max)))+
+  geom_bar() +
+  scale_fill_hue() +
+  theme_minimal() +
+  facet_wrap(vars(c("Pur Vol No Promo - %","Pur Vol Promo 6 %","Pur Vol Other Promo %")))
+
+
+```
+Suggested mail promotions
+when it comes in cluster 1  there is a minimum purchase of pricecategory 4 and price category 1
+even though where there is availabilty of all promos or no promos.
+
+when it comes in cluster 2  there is a minimum purchase of pricecategory 3
+even though where there is availabilty of all promos or no promos.
+
+when it comes in cluster 3  there is a minimum purchase of pricecategory 4
+even though where there is availabilty of all promos or no promos.
+
+
+
